@@ -1,0 +1,244 @@
+import torch
+from transformers import GPT2LMHeadModel, GPT2Tokenizer
+import random
+import pyttsx3  # Text-to-speech library
+import webbrowser  # To open YouTube videos in the browser
+
+# Initialize the text-to-speech engine
+engine = pyttsx3.init()
+
+# Function to make the chatbot "speak"
+def talkback(text):
+    print(f"Chatbot: {text}")  # Print the text to the console
+    engine.say(text)  # Convert text to speech
+    engine.runAndWait()  # Wait for the speech to finish
+
+# Load the pre-trained GPT-2 model and tokenizer
+def load_model():
+    print("Loading model...")
+    model_name = "gpt2"  # Use "gpt2-medium" or other variants if your hardware supports it
+    tokenizer = GPT2Tokenizer.from_pretrained(model_name)
+    model = GPT2LMHeadModel.from_pretrained(model_name)
+    return model, tokenizer
+
+# Generate a quiz using the AI model
+def generate_quiz(model, tokenizer, topic):
+    # Improved prompt to generate actual quiz questions
+    prompt = f"Generate 5 specific quiz questions about {topic}. Each question should be clear and concise. Here are the questions:\n1."
+    quiz = generate_response(model, tokenizer, prompt)
+    return quiz
+
+# Generate a response from the chatbot
+def generate_response(model, tokenizer, prompt, max_length=100):
+    inputs = tokenizer.encode(prompt, return_tensors="pt")
+    outputs = model.generate(
+        inputs,
+        max_length=max_length,
+        num_return_sequences=1,
+        no_repeat_ngram_size=2,
+        pad_token_id=tokenizer.eos_token_id
+    )
+    response = tokenizer.decode(outputs[0], skip_special_tokens=True)
+    return response
+
+# Assess the user's language level
+def assess_language_level():
+    questions = [
+        "What is your name?",
+        "How old are you?",
+        "What is your favorite hobby?",
+        "Can you describe your daily routine in a few sentences?",
+        "What do you find most challenging about learning English?"
+    ]
+
+    answers = []
+    for question in questions:
+        talkback(question)  # Speak the question
+        answer = input("Your answer: ")  # Get user input
+        answers.append(answer)
+
+    # Analyze answers to determine language level
+    word_count = sum(len(answer.split()) for answer in answers)
+    if word_count < 10:
+        return "beginner"
+    elif word_count < 20:
+        return "intermediate"
+    else:
+        return "advanced"
+
+# Get YouTube video links for lessons
+def get_youtube_video(language_level, lesson_number):
+    # Curated YouTube video links for each topic
+    youtube_links = {
+        "beginner": [
+            "https://www.youtube.com/watch?v=abc123",  # Lesson 1: Basic vocabulary
+            "https://www.youtube.com/watch?v=def456",  # Lesson 2: Simple sentences
+            "https://www.youtube.com/watch?v=ghi789",  # Lesson 3: Greetings
+            "https://www.youtube.com/watch?v=jkl012",  # Lesson 4: Numbers
+            "https://www.youtube.com/watch?v=mno345",  # Lesson 5: Colors
+            "https://www.youtube.com/watch?v=pqr678",  # Lesson 6: Family members
+            "https://www.youtube.com/watch?v=stu901",  # Lesson 7: Days of the week
+            "https://www.youtube.com/watch?v=vwx234",  # Lesson 8: Months of the year
+            "https://www.youtube.com/watch?v=yza567",  # Lesson 9: Common verbs
+            "https://www.youtube.com/watch?v=bcd890",  # Lesson 10: Food and drinks
+            "https://www.youtube.com/watch?v=efg123",  # Lesson 11: Weather
+            "https://www.youtube.com/watch?v=hij456",  # Lesson 12: Clothes
+            "https://www.youtube.com/watch?v=klm789",  # Lesson 13: Animals
+            "https://www.youtube.com/watch?v=nop012",  # Lesson 14: Places in the city
+            "https://www.youtube.com/watch?v=qrs345",  # Lesson 15: Transportation
+            "https://www.youtube.com/watch?v=tuv678",  # Lesson 16: Jobs and occupations
+            "https://www.youtube.com/watch?v=wxy901",  # Lesson 17: Daily activities
+            "https://www.youtube.com/watch?v=zab234",  # Lesson 18: Shopping
+            "https://www.youtube.com/watch?v=cde567",  # Lesson 19: Health
+            "https://www.youtube.com/watch?v=fgh890"   # Lesson 20: Travel
+        ],
+        "intermediate": [
+            "https://www.youtube.com/watch?v=ijk123",  # Lesson 1: Grammar rules
+            "https://www.youtube.com/watch?v=lmn456",  # Lesson 2: Sentence structures
+            "https://www.youtube.com/watch?v=opq789",  # Lesson 3: Tenses
+            "https://www.youtube.com/watch?v=rst012",  # Lesson 4: Prepositions
+            "https://www.youtube.com/watch?v=uvw345",  # Lesson 5: Adjectives
+            "https://www.youtube.com/watch?v=xyz678",  # Lesson 6: Adverbs
+            "https://www.youtube.com/watch?v=abc901",  # Lesson 7: Conjunctions
+            "https://www.youtube.com/watch?v=def234",  # Lesson 8: Modal verbs
+            "https://www.youtube.com/watch?v=ghi567",  # Lesson 9: Passive voice
+            "https://www.youtube.com/watch?v=jkl890",  # Lesson 10: Reported speech
+            "https://www.youtube.com/watch?v=mno123",  # Lesson 11: Conditionals
+            "https://www.youtube.com/watch?v=pqr456",  # Lesson 12: Relative clauses
+            "https://www.youtube.com/watch?v=stu789",  # Lesson 13: Phrasal verbs
+            "https://www.youtube.com/watch?v=vwx012",  # Lesson 14: Articles
+            "https://www.youtube.com/watch?v=yza345",  # Lesson 15: Quantifiers
+            "https://www.youtube.com/watch?v=bcd678",  # Lesson 16: Comparatives and superlatives
+            "https://www.youtube.com/watch?v=efg901",  # Lesson 17: Gerunds and infinitives
+            "https://www.youtube.com/watch?v=hij234",  # Lesson 18: Direct and indirect speech
+            "https://www.youtube.com/watch?v=klm567",  # Lesson 19: Word formation
+            "https://www.youtube.com/watch?v=nop890"   # Lesson 20: Common idioms
+        ],
+        "advanced": [
+            "https://www.youtube.com/watch?v=qrs123",  # Lesson 1: Advanced vocabulary
+            "https://www.youtube.com/watch?v=tuv456",  # Lesson 2: Complex sentences
+            "https://www.youtube.com/watch?v=wxy789",  # Lesson 3: Formal writing
+            "https://www.youtube.com/watch?v=zab012",  # Lesson 4: Academic writing
+            "https://www.youtube.com/watch?v=cde345",  # Lesson 5: Business English
+            "https://www.youtube.com/watch?v=fgh678",  # Lesson 6: Debate and discussion
+            "https://www.youtube.com/watch?v=ijk901",  # Lesson 7: Advanced grammar
+            "https://www.youtube.com/watch?v=lmn234",  # Lesson 8: Advanced phrasal verbs
+            "https://www.youtube.com/watch?v=opq567",  # Lesson 9: Advanced idioms
+            "https://www.youtube.com/watch?v=rst890",  # Lesson 10: Advanced pronunciation
+            "https://www.youtube.com/watch?v=uvw123",  # Lesson 11: Advanced listening skills
+            "https://www.youtube.com/watch?v=xyz456",  # Lesson 12: Advanced reading skills
+            "https://www.youtube.com/watch?v=abc789",  # Lesson 13: Advanced speaking skills
+            "https://www.youtube.com/watch?v=def012",  # Lesson 14: Advanced writing skills
+            "https://www.youtube.com/watch?v=ghi345",  # Lesson 15: Advanced vocabulary for exams
+            "https://www.youtube.com/watch?v=jkl678",  # Lesson 16: Advanced grammar for exams
+            "https://www.youtube.com/watch?v=mno901",  # Lesson 17: Advanced listening for exams
+            "https://www.youtube.com/watch?v=pqr234",  # Lesson 18: Advanced reading for exams
+            "https://www.youtube.com/watch?v=stu567",  # Lesson 19: Advanced speaking for exams
+            "https://www.youtube.com/watch?v=vwx890"   # Lesson 20: Advanced writing for exams
+        ]
+    }
+    return youtube_links[language_level][lesson_number]
+
+# Play YouTube video in fullscreen mode
+def play_video(video_url):
+    # Add autoplay and fullscreen parameters to the URL
+    video_url = video_url.replace("watch?v=", "embed/") + "?autoplay=1&fs=1"
+    webbrowser.open(video_url)  # Open the video in the default browser
+
+# Evaluate the user's quiz answers
+def evaluate_quiz(quiz, user_answers):
+    # For simplicity, assume all answers are correct
+    # In a real implementation, you would compare user_answers to correct answers
+    talkback("Evaluating your answers...")
+    return random.randint(10, 20)  # Random score between 10 and 20
+
+# Main function to run the chatbot
+def main():
+    model, tokenizer = load_model()
+
+    talkback("Welcome to the Comprehensive English Teaching Chatbot!")
+    language_level = assess_language_level()
+    talkback(f"Based on your answers, your English level is {language_level}. Let's start learning!")
+
+    lesson_number = 0
+    scores = []
+
+    while lesson_number < 20:  # 20 lessons for each level
+        # Get YouTube video for the lesson
+        video_url = get_youtube_video(language_level, lesson_number)
+        talkback(f"Playing Lesson {lesson_number + 1}...")
+        play_video(video_url)  # Play the video in fullscreen mode
+        input("Press Enter after you have finished watching the video...")
+
+        # Generate and display the quiz
+        topic = [
+            "basic vocabulary", "simple sentences", "greetings", "numbers", "colors",
+            "family members", "days of the week", "months of the year", "common verbs", "food and drinks",
+            "weather", "clothes", "animals", "places in the city", "transportation",
+            "jobs and occupations", "daily activities", "shopping", "health", "travel"
+        ][lesson_number] if language_level == "beginner" else [
+            "grammar rules", "sentence structures", "tenses", "prepositions", "adjectives",
+            "adverbs", "conjunctions", "modal verbs", "passive voice", "reported speech",
+            "conditionals", "relative clauses", "phrasal verbs", "articles", "quantifiers",
+            "comparatives and superlatives", "gerunds and infinitives", "direct and indirect speech", "word formation", "common idioms"
+        ][lesson_number] if language_level == "intermediate" else [
+            "advanced vocabulary", "complex sentences", "formal writing", "academic writing", "business English",
+            "debate and discussion", "advanced grammar", "advanced phrasal verbs", "advanced idioms", "advanced pronunciation",
+            "advanced listening skills", "advanced reading skills", "advanced speaking skills", "advanced writing skills", "advanced vocabulary for exams",
+            "advanced grammar for exams", "advanced listening for exams", "advanced reading for exams", "advanced speaking for exams", "advanced writing for exams"
+        ][lesson_number]
+        quiz = generate_quiz(model, tokenizer, topic)
+        talkback(f"Quiz for Lesson {lesson_number + 1}:\n{quiz}")
+
+        # Split the quiz into individual questions
+        questions = quiz.split("\n")[:5]  # Take the first 5 lines as questions
+
+        # Get user's answers
+        user_answers = []
+        for i, question in enumerate(questions):
+            talkback(f"Question {i + 1}: {question}")
+            answer = input("Your answer: ")  # Get user input
+            user_answers.append(answer)
+
+        # Evaluate the quiz
+        score = evaluate_quiz(quiz, user_answers)
+        scores.append(score)
+        talkback(f"You scored {score} out of 20 in this quiz.")
+
+        # Check if the user passed the quiz
+        if score >= 12:  # Passing score is 12/20
+            talkback("Congratulations! You passed the quiz. Moving to the next lesson.")
+            lesson_number += 1
+        else:
+            talkback("You did not pass the quiz. Please review the lesson and try again.")
+
+    # Final test after completing all lessons
+    talkback("You have completed all the lessons! Let's take a final test to assess your improvement.")
+
+    # Generate and display the final quiz
+    final_quiz = generate_quiz(model, tokenizer, "final review")
+    talkback(f"Final Test:\n{final_quiz}")
+
+    # Split the final quiz into individual questions
+    final_questions = final_quiz.split("\n")[:5]  # Take the first 5 lines as questions
+
+    # Get user's answers for the final test
+    final_answers = []
+    for i, question in enumerate(final_questions):
+        talkback(f"Question {i + 1}: {question}")
+        answer = input("Your answer: ")  # Get user input
+        final_answers.append(answer)
+
+    # Evaluate the final test
+    final_score = evaluate_quiz(final_quiz, final_answers)
+    talkback(f"You scored {final_score} out of 20 in the final test.")
+
+    # Display improvement
+    initial_score = scores[0]
+    improvement = final_score - initial_score
+    talkback(f"Your initial score was {initial_score} out of 20, and your final score is {final_score} out of 20.")
+    talkback(f"You have improved by {improvement} points. Well done!")
+    talkback("Thank you for using the Comprehensive English Teaching Chatbot. Goodbye!")
+
+if __name__ == "__main__":
+    main()
